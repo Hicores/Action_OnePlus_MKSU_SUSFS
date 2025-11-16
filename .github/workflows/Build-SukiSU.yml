@@ -82,14 +82,6 @@ jobs:
           cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
           cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
 
-          if [ "${{ github.event.inputs.ZRAM }}" = "true" ]; then
-          echo "正在给内核打zram补丁"
-          cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux
-          cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./common/lib
-          cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto
-          cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/
-          fi
-
           cd ./common
           patch -p1 < 50_add_susfs_in_gki-android15-6.6.patch || true
           echo "完成"
@@ -220,21 +212,8 @@ jobs:
           done
           
 
-      - name: Apply patch_linux and replace Image
-        if: ${{ github.event.inputs.KPM == 'true' }}
-        run: |
-          cd /home/runner/work/Action_OnePlus_MKSU_SUSFS/Action_OnePlus_MKSU_SUSFS/kernel_workspace/kernel_platform/out/msm-kernel-sun-perf/dist
-
-          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch_linux
-          chmod +x patch_linux
-          ./patch_linux
-          rm -f Image
-          mv oImage Image
-          cp Image $GITHUB_WORKSPACE/AnyKernel3/Image
-
       # 下载 SUSFS 模块（CI）
       - name: Download Latest SUSFS Module from CI
-        if: ${{ github.event.inputs.SUSFS_CI == 'true' }}
         run: |
           LATEST_RUN_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/sidex15/susfs4ksu-module/actions/runs?status=success" | \
@@ -251,25 +230,12 @@ jobs:
           curl -L -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -o ksu_module_susfs.zip "$ARTIFACT_URL"
           cp ksu_module_susfs.zip ./AnyKernel3/
 
-      # 下载 SUSFS 模块（Release）
-      - name: Download Latest SUSFS Module from Release
-        if: ${{ github.event.inputs.SUSFS_CI == 'false' }}
-        run: |
-          wget https://github.com/sidex15/ksu_module_susfs/releases/latest/download/ksu_module_susfs_1.5.2+.zip
-          cp ksu_module_susfs_1.5.2+.zip ./AnyKernel3/
 
       - name: Set suffix
         id: suffix
         run: |
           echo "value${{ 'true' == 'true' && '_VFS' || '' }}${{ 'false' == 'true' && '_LZ4KD' || '' }}" >> $GITHUB_OUTPUT
 
-      - name: Remove _uv suffix from FEIL
-        id: feil_clean
-        run: |
-          clean_feil="${{ github.event.inputs.FEIL }}"
-          clean_feil="${clean_feil%_v}"  # 去掉结尾的 _v（如果有）
-          clean_feil="${clean_feil%_u}"  # 去掉结尾的 _u（如果有）
-          echo "value=$clean_feil" >> $GITHUB_OUTPUT
 
       - name: Upload AnyKernel3
         uses: actions/upload-artifact@v4
