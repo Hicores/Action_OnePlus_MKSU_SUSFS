@@ -214,12 +214,6 @@ jobs:
           cp ksu_module_susfs.zip ./AnyKernel3/
 
 
-      - name: Set suffix
-        id: suffix
-        run: |
-          echo "value${{ 'true' == 'true' && '_VFS' || '' }}${{ 'false' == 'true' && '_LZ4KD' || '' }}" >> $GITHUB_OUTPUT
-
-
       - name: Upload AnyKernel3
         uses: actions/upload-artifact@v4
         with:
